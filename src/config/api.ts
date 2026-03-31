@@ -1,25 +1,30 @@
 /**
  * API configuration for the Aurikrex Academy frontend.
  *
- * The backend URL is auto-detected based on the build environment:
- * - Development:  http://localhost:3000
- * - Production:   https://zonal-megen-falkyblinders-09833153.koyeb.app
- *                 (Koyeb deployment — update this constant if the deployment URL changes)
- *
- * Set the VITE_API_URL environment variable to override the auto-detected URL.
+ * The app now targets the hosted Django backend by default.
+ * If you want to use a local backend during development, set:
+ *   VITE_API_URL=http://localhost:3000/api
  */
 
-/** Production backend URL (Koyeb deployment) */
-export const PRODUCTION_API_URL = 'https://zonal-megen-falkyblinders-09833153.koyeb.app';
+/** Hosted backend URL */
+export const HOSTED_API_URL = 'https://aurikrex-ed-tech.vercel.app/api';
 
-/** Development backend URL */
-export const DEVELOPMENT_API_URL = 'http://localhost:3000';
+/** Optional local backend URL for development overrides */
+export const LOCAL_API_URL = 'http://localhost:3000/api';
+
+const normalizeApiUrl = (url: string): string => {
+  const trimmedUrl = url.trim().replace(/\/+$/, '');
+  const withoutAuthPath = trimmedUrl
+    .replace(/\/api\/auth(?:\/.*)?$/i, '/api')
+    .replace(/\/auth(?:\/.*)?$/i, '');
+
+  return withoutAuthPath.endsWith('/api') ? withoutAuthPath : `${withoutAuthPath}/api`;
+};
 
 /**
  * Resolved API base URL.
- * Prefers the VITE_API_URL environment variable, then falls back to
- * environment-based detection.
+ * Prefers the explicit environment variable and otherwise uses the hosted backend.
+ * Automatically appends `/api` if it was omitted from the environment value.
  */
-export const API_BASE_URL: string =
-  import.meta.env.VITE_API_URL ||
-  (import.meta.env.DEV ? DEVELOPMENT_API_URL : PRODUCTION_API_URL);
+const envApiUrl = import.meta.env.VITE_API_URL?.trim();
+export const API_BASE_URL: string = envApiUrl ? normalizeApiUrl(envApiUrl) : HOSTED_API_URL;

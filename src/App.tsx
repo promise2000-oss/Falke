@@ -1,7 +1,9 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Toaster } from 'sonner';
 import type { ReactNode } from 'react';
+import { getGoogleClientId } from './lib/auth';
 
 // Pages
 import Home from './pages/Home';
@@ -10,6 +12,9 @@ import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
 import AuthCallback from './pages/AuthCallback';
+import OtpVerification from './pages/OtpVerification';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Library from './pages/Library';
 import AdminApproval from './pages/AdminApproval';
 import AdminDashboard from './pages/Admin';
@@ -63,6 +68,10 @@ function AppRoutes() {
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
+      <Route path="/verify-otp" element={<OtpVerification />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/reset-password/:token" element={<ResetPassword />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/library" element={<Library />} />
       
@@ -109,7 +118,9 @@ function AppRoutes() {
 }
 
 function App() {
-  return (
+  const clientId = getGoogleClientId();
+
+  const appContent = (
     <AuthProvider>
       <Router>
         <Toaster position="top-right" richColors closeButton />
@@ -117,6 +128,8 @@ function App() {
       </Router>
     </AuthProvider>
   );
+
+  return clientId ? <GoogleOAuthProvider clientId={clientId}>{appContent}</GoogleOAuthProvider> : appContent;
 }
 
 export default App;

@@ -2,10 +2,13 @@ import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { getPostAuthRoute } from '../lib/auth';
 
 export default function AuthCallback() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { setAuthSession } = useAuth();
 
   useEffect(() => {
     const handleOAuthCallback = async () => {
@@ -45,12 +48,6 @@ export default function AuthCallback() {
           return;
         }
 
-        // Store authentication data
-        localStorage.setItem('aurikrex-token', token);
-        if (refreshToken) {
-          localStorage.setItem('aurikrex-refresh-token', refreshToken);
-        }
-
         // Parse displayName into firstName and lastName
         const [firstName = 'User', ...lastNameParts] = (displayName || email.split('@')[0]).split(' ');
         const lastName = lastNameParts.join(' ') || '';
@@ -76,19 +73,22 @@ export default function AuthCallback() {
           role, // Include role from JWT token
         };
 
-        // Store user data
-        localStorage.setItem('aurikrex-user', JSON.stringify(user));
+        setAuthSession({
+          token,
+          refreshToken: refreshToken || undefined,
+          user,
+        });
 
         console.log(`✅ ${provider} OAuth successful, user role: ${role}`);
         toast.success(`Welcome, ${firstName}! 🎉`);
 
-        // Route based on role: admin goes to /admin, others go to /dashboard
+        const redirectPath = getPostAuthRoute(role);
+
         if (role === 'admin') {
           console.log('🔑 Admin user detected, redirecting to admin dashboard');
-          navigate('/admin', { replace: true });
-        } else {
-          navigate('/dashboard', { replace: true });
         }
+
+        navigate(redirectPath, { replace: true });
       } catch (err) {
         console.error('OAuth callback error:', err);
         toast.error('Authentication failed. Please try again.');
@@ -97,7 +97,7 @@ export default function AuthCallback() {
     };
 
     handleOAuthCallback();
-  }, [searchParams, navigate]);
+  }, [searchParams, navigate, setAuthSession]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-black to-gray-900">

@@ -1,12 +1,20 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Sparkles, Moon, Sun, Phone, ArrowRight, RotateCcw, Mail, Eye, EyeOff, Lock } from 'lucide-react';
 import { toast } from 'sonner';
+import GoogleLoginButton from '../components/auth/GoogleLoginButton';
 import { useTheme } from '../hooks/use-theme';
+import { getPostAuthRoute } from '../lib/auth';
+import { extractAuthSession, loginUser } from '../utils/authApi';
 
 type LoginStep = 'options' | 'phone' | 'otp' | 'email';
+
+interface LoginLocationState {
+  email?: string;
+  passwordResetSuccess?: boolean;
+}
 
 export default function Login() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -28,31 +36,44 @@ export default function Login() {
   const [isEmailLoading, setIsEmailLoading] = useState(false);
 
   const navigate = useNavigate();
-  const { signInWithProvider } = useAuth();
+  const location = useLocation();
+  const { signInWithGoogleToken, setAuthSession } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const locationState = (location.state as LoginLocationState | null) ?? null;
+
+  useEffect(() => {
+    if (locationState?.email) {
+      setEmail(locationState.email.trim().toLowerCase());
+      setStep('email');
+    }
+
+    if (locationState?.passwordResetSuccess) {
+      toast.success('Password updated successfully. Sign in with your new password.');
+    }
+  }, [locationState?.email, locationState?.passwordResetSuccess]);
 
   // ── Google OAuth ──────────────────────────────────────────────────────────
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = async (googleToken: string) => {
     setError('');
     setIsGoogleLoading(true);
+
     try {
-      await signInWithProvider('google');
+      const user = await signInWithGoogleToken(googleToken);
+      toast.success(`Welcome back, ${user.firstName || user.displayName || 'there'}! 🎉`);
+      navigate(getPostAuthRoute(user.role), { replace: true });
     } catch (err) {
       console.error('Google sign-in error:', err);
-      const e = err as { code?: string; message?: string };
-      let msg = 'Failed to sign in with Google. Please try again.';
-      if (e.code === 'auth/popup-closed-by-user') msg = 'Sign-in cancelled';
-      else if (e.code === 'auth/popup-blocked') msg = 'Pop-up blocked. Please enable pop-ups for this site';
-      else if (e.message?.includes('not configured')) msg = e.message!;
-      else if (e.message?.includes('Failed to fetch') || e.message?.includes('Unable to connect')) {
-        msg = 'Unable to connect to authentication server. Please check your internet connection and try again.';
-        console.error('Network error details - check browser Network tab for CORS issues:', e);
-      } else if (e.message?.includes('CORS')) msg = 'Connection blocked by security settings. Please contact support.';
+      const msg = err instanceof Error ? err.message : 'Failed to sign in with Google. Please try again.';
       setError(msg);
       toast.error(msg);
     } finally {
       setIsGoogleLoading(false);
     }
+  };
+
+  const handleGoogleError = (message: string) => {
+    setError(message);
+    toast.error(message);
   };
 
   // ── Email + Password ──────────────────────────────────────────────────────
@@ -63,20 +84,28 @@ export default function Login() {
     setError('');
     setIsEmailLoading(true);
     try {
-      // TODO: replace with your actual email/password sign-in logic
-      // e.g. await signInWithEmailAndPassword(auth, email, password);
-      await new Promise((r) => setTimeout(r, 1000));
-      toast.success('Welcome back! 🎉');
-      navigate('/dashboard');
+      const result = await loginUser({ email, password });
+      const session = extractAuthSession(result, { email: email.trim().toLowerCase() });
+
+      if (!session) {
+        throw new Error('Sign-in succeeded but no session was returned by the server.');
+      }
+
+      setAuthSession(session);
+      toast.success(`Welcome back, ${session.user.firstName || session.user.displayName || 'there'}! 🎉`);
+      navigate(getPostAuthRoute(session.user.role), { replace: true });
     } catch (err) {
-      const e = err as { code?: string; message?: string };
-      let msg = 'Failed to sign in. Please check your credentials and try again.';
-      if (e.code === 'auth/user-not-found') msg = 'No account found with this email.';
-      else if (e.code === 'auth/wrong-password') msg = 'Incorrect password. Please try again.';
-      else if (e.code === 'auth/too-many-requests') msg = 'Too many attempts. Please try again later.';
-      else if (e.code === 'auth/invalid-email') msg = 'Invalid email address.';
-      setError(msg);
-      toast.error(msg);
+      const msg = err instanceof Error ? err.message : 'Failed to sign in. Please check your credentials and try again.';
+
+      if (msg.toLowerCase().includes('verify otp')) {
+        toast.info('Please verify the OTP sent to your email first.');
+        navigate(`/verify-otp?email=${encodeURIComponent(email.trim().toLowerCase())}`, {
+          state: { email: email.trim().toLowerCase() },
+        });
+      } else {
+        setError(msg);
+        toast.error(msg);
+      }
     } finally {
       setIsEmailLoading(false);
     }
@@ -322,23 +351,13 @@ export default function Login() {
               className="space-y-3"
             >
               {/* Google */}
-              <button
-                onClick={handleGoogleSignIn}
-                disabled={isGoogleLoading}
-                className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-border bg-card hover:bg-accent/40 transition-all font-medium text-sm disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {isGoogleLoading ? (
-                  <span className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <svg className="w-5 h-5" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                  </svg>
-                )}
-                Continue with Google
-              </button>
+              <GoogleLoginButton
+                mode="login"
+                themeMode={theme}
+                isLoading={isGoogleLoading}
+                onToken={handleGoogleSignIn}
+                onFailure={handleGoogleError}
+              />
 
               {/* Email */}
               <button
@@ -419,7 +438,7 @@ export default function Login() {
               {/* Forgot password */}
               <div className="flex justify-end">
                 <Link
-                  to="/forgot-password"
+                  to={email.trim() ? `/forgot-password?email=${encodeURIComponent(email.trim().toLowerCase())}` : '/forgot-password'}
                   className="text-xs text-primary hover:underline"
                 >
                   Forgot password?
@@ -455,6 +474,7 @@ export default function Login() {
                 <select
                   value={countryCode}
                   onChange={(e) => setCountryCode(e.target.value)}
+                  aria-label="Select country code"
                   className="px-3 py-3 rounded-xl border border-border bg-card text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   {countryCodes.map((c) => (
@@ -510,6 +530,7 @@ export default function Login() {
                     inputMode="numeric"
                     maxLength={1}
                     value={digit}
+                    aria-label={`OTP digit ${i + 1}`}
                     onChange={(e) => handleOtpChange(i, e.target.value)}
                     onKeyDown={(e) => handleOtpKeyDown(i, e)}
                     autoFocus={i === 0}

@@ -2,12 +2,15 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import GoogleLoginButton from '../components/auth/GoogleLoginButton';
 import {
   ArrowLeft, Sparkles, Moon, Sun, Rocket, Mail,
   ArrowRight, Eye, EyeOff, Lock, User, Phone, AtSign, CheckCircle2, XCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTheme } from '../hooks/use-theme';
+import { getPostAuthRoute } from '../lib/auth';
+import { signupUser } from '../utils/authApi';
 
 type SignupStep = 'options' | 'email-form';
 
@@ -21,7 +24,7 @@ const passwordRules: PasswordRule[] = [
   { label: 'Must contain uppercase',      test: (pw) => /[A-Z]/.test(pw) },
   { label: 'Must contain lowercase',      test: (pw) => /[a-z]/.test(pw) },
   { label: 'Must contain a digit',        test: (pw) => /\d/.test(pw) },
-  { label: 'Must contain special character', test: (pw) => /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pw) },
+  { label: 'Must contain special character', test: (pw) => /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(pw) },
 ];
 
 export default function Signup() {
@@ -43,7 +46,7 @@ export default function Signup() {
   const [passwordFocused, setPasswordFocused] = useState(false);
 
   const navigate = useNavigate();
-  const { signInWithProvider } = useAuth();
+  const { signInWithGoogleToken } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
   // ── Password rule checks ──────────────────────────────────────────────────
@@ -51,25 +54,26 @@ export default function Signup() {
   const passwordsMatch = password === confirmPassword && confirmPassword.length > 0;
 
   // ── Google OAuth ──────────────────────────────────────────────────────────
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = async (googleToken: string) => {
     setError('');
     setIsGoogleLoading(true);
+
     try {
-      await signInWithProvider('google');
+      const user = await signInWithGoogleToken(googleToken);
+      toast.success(`Welcome, ${user.firstName || user.displayName || 'there'}! 🎉`);
+      navigate(getPostAuthRoute(user.role), { replace: true });
     } catch (err) {
-      const e = err as { code?: string; message?: string };
-      let msg = 'Failed to sign up with Google. Please try again.';
-      if (e.code === 'auth/popup-closed-by-user') msg = 'Sign-up cancelled';
-      else if (e.code === 'auth/popup-blocked') msg = 'Pop-up blocked. Please enable pop-ups for this site';
-      else if (e.message?.includes('not configured')) msg = e.message!;
-      else if (e.message?.includes('Failed to fetch') || e.message?.includes('Unable to connect'))
-        msg = 'Unable to connect to authentication server. Please check your internet connection and try again.';
-      else if (e.message?.includes('CORS')) msg = 'Connection blocked by security settings. Please contact support.';
+      const msg = err instanceof Error ? err.message : 'Failed to sign up with Google. Please try again.';
       setError(msg);
       toast.error(msg);
     } finally {
       setIsGoogleLoading(false);
     }
+  };
+
+  const handleGoogleError = (message: string) => {
+    setError(message);
+    toast.error(message);
   };
 
   // ── Email form submit ─────────────────────────────────────────────────────
@@ -85,17 +89,27 @@ export default function Signup() {
     setError('');
     setIsEmailLoading(true);
     try {
-      // TODO: replace with your actual signup logic
-      // e.g. await createUserWithEmailAndPassword(auth, email, password)
-      // then save firstName, lastName, username, phone to your DB
-      await new Promise((r) => setTimeout(r, 1200));
-      toast.success('Account created! Welcome aboard 🎉');
-      navigate('/dashboard');
+      const result = await signupUser({
+        firstName,
+        lastName,
+        phone,
+        username,
+        email,
+        password,
+      });
+
+      const response = (result ?? {}) as { message?: string; email?: string };
+      const nextEmail = response.email || email.trim().toLowerCase();
+
+      toast.success(response.message || 'Account created. Check your email for the OTP.');
+      navigate(`/verify-otp?email=${encodeURIComponent(nextEmail)}`, {
+        state: {
+          email: nextEmail,
+          firstName: firstName.trim(),
+        },
+      });
     } catch (err) {
-      const e = err as { code?: string; message?: string };
-      let msg = 'Failed to create account. Please try again.';
-      if (e.code === 'auth/email-already-in-use') msg = 'An account with this email already exists.';
-      else if (e.code === 'auth/invalid-email')   msg = 'Invalid email address.';
+      const msg = err instanceof Error ? err.message : 'Failed to create account. Please try again.';
       setError(msg);
       toast.error(msg);
     } finally {
@@ -227,23 +241,13 @@ export default function Signup() {
               className="space-y-3"
             >
               {/* Google */}
-              <button
-                onClick={handleGoogleSignIn}
-                disabled={isGoogleLoading}
-                className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-border bg-card hover:bg-accent/40 transition-all font-medium text-sm disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {isGoogleLoading ? (
-                  <span className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <svg className="w-5 h-5" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                  </svg>
-                )}
-                Sign up with Google
-              </button>
+              <GoogleLoginButton
+                mode="signup"
+                themeMode={theme}
+                isLoading={isGoogleLoading}
+                onToken={handleGoogleSignIn}
+                onFailure={handleGoogleError}
+              />
 
               {/* Divider */}
               <div className="relative my-2">

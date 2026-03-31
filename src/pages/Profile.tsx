@@ -54,6 +54,7 @@ import {
   Languages,
   Heart,
   Briefcase,
+  LogOut,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -115,10 +116,10 @@ interface ProfileFormData {
 // ============================================================================
 export default function Profile() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const shouldReduceMotion = useReducedMotion();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const usernameTimeoutRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
+  const usernameTimeoutRef = useRef<number | null>(null);
   const usernameRequestRef = useRef(0);
   const [isSaving, setIsSaving] = useState(false);
   const [usernameStatus, setUsernameStatus] = useState<"idle" | "available" | "unavailable">("idle");
@@ -285,6 +286,12 @@ export default function Profile() {
     return Object.keys(newErrors).length === 0;
   };
 
+  const handleLogout = () => {
+    logout();
+    toast.success("You have been signed out.");
+    navigate("/login", { replace: true });
+  };
+
   // Save profile
   const handleSave = async () => {
     if (!validateForm()) {
@@ -341,14 +348,25 @@ export default function Profile() {
             <h1 className="text-xl font-bold">My Profile</h1>
           </div>
           
-          <Button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="rounded-xl px-6"
-          >
-            <Save className="w-4 h-4 mr-2" />
-            {isSaving ? "Saving..." : "Save Profile"}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={handleLogout}
+              className="rounded-xl"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
+
+            <Button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="rounded-xl px-6"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              {isSaving ? "Saving..." : "Save Profile"}
+            </Button>
+          </div>
         </div>
       </motion.header>
 

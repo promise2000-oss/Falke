@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { validateToken } from '../utils/api';
 import { API_BASE_URL } from '../config/api';
+import { extractAuthSession, getOAuthUrl, loginWithGoogleToken, logoutUser, type AuthSession, type AuthUser } from '../utils/authApi';
 
 /**
  * Backend API URL - auto-detected by environment.
@@ -12,40 +13,30 @@ const API_URL = API_BASE_URL;
 // Supported OAuth providers
 type OAuthProvider = 'google' | 'microsoft' | 'github';
 
-interface User {
-  uid: string;
-  email: string;
-  firstName?: string;
-  lastName?: string;
-  displayName?: string;
-  phone?: string;
-  photoURL?: string;
-  emailVerified?: boolean;
-  provider?: OAuthProvider;
-}
-
 interface AuthContextType {
-  user: User | null;
+  user: AuthUser | null;
   loading: boolean;
   signInWithProvider: (provider: OAuthProvider) => Promise<void>;
+  signInWithGoogleToken: (token: string) => Promise<AuthUser>;
+  setAuthSession: (session: AuthSession) => void;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('aurikrex-user');
     const token = localStorage.getItem('aurikrex-token');
-    
+
     if (storedUser && token) {
       try {
         // Validate token before setting user
         if (validateToken()) {
-          setUser(JSON.parse(storedUser));
+          setUser(JSON.parse(storedUser) as AuthUser);
         } else {
           // Token is invalid or expired, clear storage
           localStorage.removeItem('aurikrex-user');
@@ -62,6 +53,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(false);
   }, []);
 
+  const setAuthSession = ({ token, refreshToken, user }: AuthSession) => {
+    setUser(user);
+    localStorage.setItem('aurikrex-token', token);
+    localStorage.setItem('aurikrex-user', JSON.stringify(user));
+
+    if (refreshToken) {
+      localStorage.setItem('aurikrex-refresh-token', refreshToken);
+    } else {
+      localStorage.removeItem('aurikrex-refresh-token');
+    }
+  };
+
+  const signInWithGoogleToken = async (token: string): Promise<AuthUser> => {
+    const result = await loginWithGoogleToken(token);
+    const session = extractAuthSession(result);
+
+    if (!session) {
+      throw new Error('Google sign-in succeeded but no session was returned by the server.');
+    }
+
+    setAuthSession(session);
+    return session.user;
+  };
+
   /**
    * Sign in with OAuth provider (Google, Microsoft, or GitHub)
    * 
@@ -70,7 +85,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
    * The OAuth flow will redirect back to /auth/callback with tokens.
    */
   const signInWithProvider = async (provider: OAuthProvider) => {
-    const requestUrl = `${API_URL}/auth/${provider}/url`;
+    const requestUrl = `${API_URL}/auth/${provider}/url/`;
     
     try {
       console.log(`🔐 Initiating ${provider} OAuth flow...`);
@@ -86,79 +101,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw error;
       }
       
-      // Get OAuth URL from backend
-      // Include credentials for cookie-based session support
-      // mode: 'cors' explicitly enables CORS requests
-      const urlResponse = await fetch(requestUrl, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        credentials: 'include', // Required for cookies/sessions
-        mode: 'cors', // Explicitly enable CORS
-      }).catch((networkError: unknown) => {
-        // Handle network-level errors (CORS, DNS, connection refused, etc.)
-        const err = networkError instanceof Error ? networkError : new Error(String(networkError));
-        console.error('❌ Network error during OAuth:', {
-          requestUrl,
-          error: err.message,
-          name: err.name,
-          stack: err.stack,
-        });
-        
-        // Provide helpful error messages for common issues
-        if (err.message === 'Failed to fetch') {
-          throw new Error(
-            `Unable to connect to authentication server. This may be due to:\n` +
-            `• Network connectivity issues\n` +
-            `• CORS misconfiguration (backend must allow origin: ${window.location.origin})\n` +
-            `• Invalid API URL: ${requestUrl}\n` +
-            `• Backend server not running\n` +
-            `Please check browser console for details.`
-          );
-        }
-        throw err;
-      });
-
-      console.log(`📥 Response received:`, {
-        status: urlResponse.status,
-        statusText: urlResponse.statusText,
-        headers: Object.fromEntries(urlResponse.headers.entries()),
-      });
-
-      if (!urlResponse.ok) {
-        let errorData: { message?: string } = {};
-        try {
-          errorData = await urlResponse.json();
-        } catch {
-          // Response is not JSON, use status text
-        }
-        
-        console.error('❌ OAuth URL request failed:', {
-          requestUrl,
-          status: urlResponse.status,
-          statusText: urlResponse.statusText,
-          errorData,
-        });
-        
-        throw new Error(
-          errorData.message || 
-          `Failed to get ${provider} OAuth URL (HTTP ${urlResponse.status})`
-        );
-      }
-
-      const responseData = await urlResponse.json();
-      
-      if (!responseData.success || !responseData.data?.url) {
-        console.error('❌ Invalid OAuth response:', {
-          requestUrl,
-          responseData,
-        });
-        throw new Error(responseData.message || 'Invalid response from authentication server');
-      }
-
-      const oauthUrl = responseData.data.url;
+      const oauthUrl = await getOAuthUrl(provider);
       console.log(`✅ Got ${provider} OAuth URL, redirecting...`);
       console.log(`🔗 Redirect URL: ${oauthUrl.substring(0, 100)}...`);
 
@@ -188,15 +131,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     // Also call backend logout to clear cookies
     if (API_URL) {
-      fetch(`${API_URL}/auth/logout`, {
-        method: 'POST',
-        credentials: 'include',
-      }).catch(console.error);
+      void logoutUser();
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithProvider, logout }}>
+    <AuthContext.Provider value={{ user, loading, signInWithProvider, signInWithGoogleToken, setAuthSession, logout }}>
       {children}
     </AuthContext.Provider>
   );
