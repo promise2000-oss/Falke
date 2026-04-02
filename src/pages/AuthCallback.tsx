@@ -79,13 +79,13 @@ export default function AuthCallback() {
           user,
         });
 
-        console.log(`✅ ${provider} OAuth successful, user role: ${role}`);
-        toast.success(`Welcome, ${firstName}! 🎉`);
+        console.log(`${provider} OAuth successful, user role: ${role}`);
+        toast.success(`Welcome, ${firstName}!`);
 
         const redirectPath = getPostAuthRoute(role);
 
         if (role === 'admin') {
-          console.log('🔑 Admin user detected, redirecting to admin dashboard');
+          console.log('Admin user detected, redirecting to admin dashboard');
         }
 
         navigate(redirectPath, { replace: true });

@@ -95,7 +95,7 @@ function StatItem({ label, end, suffix }: { label: string; end: number; suffix: 
 // ============================================================
 
 function NavBar() {
-  const navigate = useNavigate(); // ✅ Must be at the top of component
+  const navigate = useNavigate(); // Must be at the top of component
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const { theme, toggleTheme } = useTheme();
@@ -437,7 +437,7 @@ function FalkeAIPreview() {
           animate={{ y: [0, -10, 0] }}
           transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
         >
-          ✨ AI-Powered
+          AI-Powered
         </motion.div>
       )}
     </motion.div>
@@ -1192,7 +1192,7 @@ function Newsletter() {
               role="alert"
             >
               <CheckCircle className="w-5 h-5" aria-hidden="true" />
-              <span className="font-semibold">Thanks! You're on the list! 🎉</span>
+              <span className="font-semibold">Thanks! You're on the list!</span>
             </motion.div>
           )}
         </AnimatePresence>
@@ -1238,7 +1238,7 @@ function Footer() {
     { icon: Twitter, href: "https://twitter.com/aurikrex", label: "Twitter" },
     { icon: Linkedin, href: "https://linkedin.com/company/aurikrex", label: "LinkedIn" },
     { icon: Youtube, href: "https://youtube.com/@aurikrex", label: "YouTube" },
-    { icon: Github, href: "https://github.com/aurikrex", label: "GitHub" },
+    // { icon: Github, href: "https://github.com/aurikrex", label: "GitHub" },
   ];
 
   return (

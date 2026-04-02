@@ -60,7 +60,7 @@ export default function Signup() {
 
     try {
       const user = await signInWithGoogleToken(googleToken);
-      toast.success(`Welcome, ${user.firstName || user.displayName || 'there'}! 🎉`);
+      toast.success(`Welcome, ${user.firstName || user.displayName || 'there'}!`);
       navigate(getPostAuthRoute(user.role), { replace: true });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to sign up with Google. Please try again.';
@@ -200,13 +200,13 @@ export default function Signup() {
             >
               {step === 'options' && (
                 <>
-                  <h1 className="text-3xl font-bold mb-3 text-foreground">Join the Future! 🚀</h1>
+                  <h1 className="text-3xl font-bold mb-3 text-foreground">Join the Future!</h1>
                   <p className="text-muted-foreground text-lg">Start your learning journey today</p>
                 </>
               )}
               {step === 'email-form' && (
                 <>
-                  <h1 className="text-3xl font-bold mb-3 text-foreground">Create your account 📧</h1>
+                  <h1 className="text-3xl font-bold mb-3 text-foreground">Create your account</h1>
                   <p className="text-muted-foreground">Fill in your details to get started</p>
                 </>
               )}

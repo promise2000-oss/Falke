@@ -32,6 +32,7 @@ export default function Login() {
   // Email state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberPassword, setRememberPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isEmailLoading, setIsEmailLoading] = useState(false);
 
@@ -50,6 +51,17 @@ export default function Login() {
     if (locationState?.passwordResetSuccess) {
       toast.success('Password updated successfully. Sign in with your new password.');
     }
+
+    const savedRemember = localStorage.getItem('rememberPassword') === 'true';
+    const savedEmail = localStorage.getItem('rememberPasswordEmail') || '';
+    const savedPassword = localStorage.getItem('rememberPasswordValue') || '';
+
+    if (savedRemember && savedEmail && savedPassword) {
+      setEmail(savedEmail);
+      setPassword(savedPassword);
+      setRememberPassword(true);
+      setStep('email');
+    }
   }, [locationState?.email, locationState?.passwordResetSuccess]);
 
   // ── Google OAuth ──────────────────────────────────────────────────────────
@@ -59,7 +71,7 @@ export default function Login() {
 
     try {
       const user = await signInWithGoogleToken(googleToken);
-      toast.success(`Welcome back, ${user.firstName || user.displayName || 'there'}! 🎉`);
+      toast.success(`Welcome back, ${user.firstName || user.displayName || 'there'}!`);
       navigate(getPostAuthRoute(user.role), { replace: true });
     } catch (err) {
       console.error('Google sign-in error:', err);
@@ -92,7 +104,18 @@ export default function Login() {
       }
 
       setAuthSession(session);
-      toast.success(`Welcome back, ${session.user.firstName || session.user.displayName || 'there'}! 🎉`);
+
+      if (rememberPassword) {
+        localStorage.setItem('rememberPassword', 'true');
+        localStorage.setItem('rememberPasswordEmail', email.trim().toLowerCase());
+        localStorage.setItem('rememberPasswordValue', password);
+      } else {
+        localStorage.removeItem('rememberPassword');
+        localStorage.removeItem('rememberPasswordEmail');
+        localStorage.removeItem('rememberPasswordValue');
+      }
+
+      toast.success(`Welcome back, ${session.user.firstName || session.user.displayName || 'there'}!`);
       navigate(getPostAuthRoute(session.user.role), { replace: true });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to sign in. Please check your credentials and try again.';
@@ -145,7 +168,7 @@ export default function Login() {
       // TODO: replace with your actual OTP verify logic
       // e.g. await verifyOtp(`${countryCode}${phoneNumber}`, code);
       await new Promise((r) => setTimeout(r, 1000));
-      toast.success('Welcome back! 🎉');
+      toast.success('Welcome back!');
       navigate('/dashboard');
     } catch {
       const msg = 'Invalid or expired code. Please try again.';
@@ -295,25 +318,25 @@ export default function Login() {
             >
               {step === 'options' && (
                 <>
-                  <h1 className="text-3xl font-bold mb-3 text-foreground">Welcome back! 👋</h1>
+                  <h1 className="text-3xl font-bold mb-3 text-foreground">Welcome back</h1>
                   <p className="text-muted-foreground text-lg">Sign in to continue your learning journey</p>
                 </>
               )}
               {step === 'email' && (
                 <>
-                  <h1 className="text-3xl font-bold mb-3 text-foreground">Sign in with email 📧</h1>
+                  <h1 className="text-3xl font-bold mb-3 text-foreground">Sign in with email</h1>
                   <p className="text-muted-foreground">Enter your credentials to continue</p>
                 </>
               )}
               {step === 'phone' && (
                 <>
-                  <h1 className="text-3xl font-bold mb-3 text-foreground">Enter your number 📱</h1>
+                  <h1 className="text-3xl font-bold mb-3 text-foreground">Enter your number</h1>
                   <p className="text-muted-foreground">We'll send a one-time code to sign you in</p>
                 </>
               )}
               {step === 'otp' && (
                 <>
-                  <h1 className="text-3xl font-bold mb-3 text-foreground">Check your texts ✉️</h1>
+                  <h1 className="text-3xl font-bold mb-3 text-foreground">Check your texts</h1>
                   <p className="text-muted-foreground">
                     Code sent to{' '}
                     <span className="font-semibold text-foreground">{countryCode} {phoneNumber}</span>
@@ -435,8 +458,17 @@ export default function Login() {
                 </button>
               </div>
 
-              {/* Forgot password */}
-              <div className="flex justify-end">
+              {/* Remember password + Forgot password */}
+              <div className="flex items-center justify-between">
+                <label className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    checked={rememberPassword}
+                    onChange={(e) => setRememberPassword(e.target.checked)}
+                    className="w-4 h-4 rounded border-border bg-card text-primary focus:ring-primary"
+                  />
+                  Remember password
+                </label>
                 <Link
                   to={email.trim() ? `/forgot-password?email=${encodeURIComponent(email.trim().toLowerCase())}` : '/forgot-password'}
                   className="text-xs text-primary hover:underline"

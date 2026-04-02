@@ -273,7 +273,7 @@ export function Library() {
               <div className="p-2 rounded-xl bg-primary/10">
                 <BookOpen className="w-8 h-8 text-primary" />
               </div>
-              <h1 className="text-3xl font-bold">📚 Learning Library</h1>
+              <h1 className="text-3xl font-bold">Learning Library</h1>
             </div>
             
             {/* Upload Button - ALWAYS RENDERED */}

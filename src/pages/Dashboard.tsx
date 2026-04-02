@@ -925,7 +925,7 @@ function FalkeAITutorCard({ onLaunchFalkeAI }: FalkeAITutorCardProps) {
           {/* Status indicator */}
           <div className="mt-4 p-3 rounded-xl bg-green-500/10 border border-green-500/20">
             <p className="text-xs text-center text-green-600 dark:text-green-400">
-              ✅ <strong>FalkeAI is ready!</strong> Click above to start your AI-powered learning session.
+              <strong>FalkeAI is ready!</strong> Click above to start your AI-powered learning session.
             </p>
           </div>
         </CardContent>
