@@ -210,7 +210,7 @@ export default function ForgotPassword() {
           <div className="rounded-2xl border border-border bg-background/70 p-4">
             <p className="text-sm font-semibold text-foreground mb-2">Email preview</p>
             <div className="rounded-xl border border-border bg-card p-3 text-left space-y-2">
-              <p className="text-xs font-semibold text-foreground">Aurikrex Security</p>
+              <p className="text-xs font-semibold text-foreground"></p>
               <p className="text-xs text-muted-foreground">
                 Use the 6-digit OTP PIN below to verify your password reset request.
               </p>

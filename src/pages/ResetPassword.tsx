@@ -23,9 +23,11 @@ export default function ResetPassword() {
     ''
   ).trim();
   const initialEmail = (searchParams.get('email') || '').trim().toLowerCase();
+  const initialUid = (searchParams.get('uid') || '').trim();
 
   const [email, setEmail] = useState(initialEmail);
   const [resetCode, setResetCode] = useState(initialResetCode);
+  const [uid, setUid] = useState(initialUid);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -86,8 +88,11 @@ export default function ResetPassword() {
 
     try {
       await resetPassword({
+        uid,
         token: resetCode,
         otp: resetCode,
+        code: resetCode,
+        pin: resetCode,
         email,
         password,
         confirmPassword,

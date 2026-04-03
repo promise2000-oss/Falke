@@ -1,103 +1,120 @@
-# Aurikrex Academy Frontend
+# Aurikrex Frontend
 
-React + TypeScript + Vite application with Firebase Authentication.
+A modern React-based learning platform featuring AI-powered tutoring, personalized lessons, and comprehensive library management. Built with TypeScript, Vite, and Tailwind CSS.
 
-## Setup
+## 🚀 Features
 
-1. Install dependencies:
+- **AI-Powered Learning**: FalkeAI Tutor for instant explanations and smart lessons
+- **Authentication**: Email/password, Google OAuth, and phone OTP verification
+- **Dashboard**: Analytics, progress tracking, and quick actions
+- **Library**: Upload and manage learning materials
+- **Responsive Design**: Mobile-first with dark/light theme support
+- **Real-time Updates**: Live progress and activity tracking
+
+## 🛠️ Tech Stack
+
+- **Frontend**: React 18, TypeScript, Vite
+- **Styling**: Tailwind CSS, ShadCN UI components
+- **Animations**: Framer Motion
+- **Authentication**: Custom backend with JWT tokens
+- **State Management**: React Context
+- **Routing**: React Router
+- **Icons**: Lucide React
+- **Notifications**: Sonner (toast library)
+
+## 📋 Prerequisites
+
+- Node.js 18+
+- npm or yarn
+- Backend API server running
+
+## 🏗️ Installation
+
+1. **Clone the repository**:
+```bash
+git clone <repository-url>
+cd aurikrex-frontend/Falke
+```
+
+2. **Install dependencies**:
 ```bash
 npm install
 ```
 
-2. Configure Firebase:
+3. **Configure environment**:
    - Copy `.env.example` to `.env.local`
-   - Update the Firebase configuration values with your Firebase project credentials from [Firebase Console](https://console.firebase.google.com/)
+   - Set your backend API URL:
+```env
+VITE_API_URL=https://your-backend-api.com
+```
 
-3. Run the development server:
+4. **Run development server**:
 ```bash
 npm run dev
 ```
 
-## Features
-
-- Firebase Authentication (Email/Password & Google Sign-In)
-- User data storage in Firestore
-- Live password validation with visual feedback
-- Responsive design with Tailwind CSS
-- ShadCN UI components
-
-## Authentication
-
-The app uses Firebase Authentication with the following providers:
-- **Email/Password**: Traditional signup with validated passwords
-- **Google Sign-In**: One-click authentication with Google accounts
-
-User data is stored in Firestore under the `users` collection.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+5. **Build for production**:
+```bash
+npm run build
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 📁 Project Structure
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+```
+src/
+├── components/          # Reusable UI components
+│   ├── auth/           # Authentication components
+│   ├── dashboard/      # Dashboard widgets
+│   ├── library/        # Library components
+│   └── ui/             # ShadCN UI components
+├── context/            # React Context providers
+├── hooks/              # Custom React hooks
+├── lib/                # Utility functions
+├── pages/              # Page components
+├── services/           # API service functions
+├── types/              # TypeScript type definitions
+└── utils/              # Helper utilities
+```
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
+## 🔐 Authentication
+
+The app supports multiple authentication methods:
+
+- **Email/Password**: Traditional signup with password validation
+- **Google OAuth**: One-click sign-in with Google accounts
+- **Phone OTP**: SMS verification for mobile users
+
+User sessions are managed with JWT tokens stored in localStorage.
+
+## 🎨 UI Components
+
+Built with ShadCN UI and Tailwind CSS for consistent, accessible design:
+
+- Form components with validation
+- Modal dialogs and drawers
+- Charts and data visualization
+- Responsive navigation and layouts
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Commit changes: `git commit -m 'Add some feature'`
+4. Push to branch: `git push origin feature/your-feature`
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 👥 Authors
+
+- **Korede Omotosho** - Founder & Developer
+
+## 🙏 Acknowledgments
+
+- Built with love for education and AI innovation
+- Powered by FalkeAI and Aurikrex vision
       // other options...
     },
   },

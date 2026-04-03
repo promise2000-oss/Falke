@@ -168,21 +168,37 @@ function NavBar() {
               )}
             </button>
 
-            {/* CTA Button - Mobile */}
-            <button
-              onClick={() => navigate("/login")}
-              className="inline-flex lg:hidden px-4 py-2.5 bg-gradient-primary text-white text-sm font-semibold rounded-xl hover:shadow-glow hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 shadow-md"
-            >
-              Start Free
-            </button>
+            {/* CTA Buttons - Mobile */}
+            <div className="inline-flex lg:hidden flex items-center gap-2">
+              <button
+                onClick={() => navigate("/signup")}
+                className="px-4 py-2.5 bg-gradient-primary text-white text-sm font-semibold rounded-xl hover:shadow-glow hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 shadow-md"
+              >
+                Sign Up
+              </button>
+              <button
+                onClick={() => navigate("/login")}
+                className="px-4 py-2.5 bg-secondary text-foreground text-sm font-semibold rounded-xl hover:bg-secondary/80 transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+              >
+                Login
+              </button>
+            </div>
 
-            {/* CTA Button - Desktop */}
-            <button
-              onClick={() => navigate("/login")}
-              className="hidden lg:inline-flex px-6 py-2.5 bg-gradient-primary text-white font-semibold rounded-2xl hover:shadow-glow hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 shadow-md"
-            >
-              Start Learning Free
-            </button>
+            {/* CTA Buttons - Desktop */}
+            <div className="hidden lg:flex items-center gap-3">
+              <button
+                onClick={() => navigate("/login")}
+                className="px-6 py-2.5 bg-secondary text-foreground font-semibold rounded-2xl hover:bg-secondary/80 transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+              >
+                Login
+              </button>
+              <button
+                onClick={() => navigate("/signup")}
+                className="px-6 py-2.5 bg-gradient-primary text-white font-semibold rounded-2xl hover:shadow-glow hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 shadow-md"
+              >
+                Sign Up Free
+              </button>
+            </div>
             {/* Mobile Menu Toggle */}
             <button
               onClick={() => setIsOpen((prev) => !prev)}

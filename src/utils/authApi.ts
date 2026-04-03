@@ -323,21 +323,42 @@ export const resetPassword = async ({
   const confirmedPassword = confirmPassword ?? password;
   const resetCredential = (token || otp || code || pin || '').trim();
 
+  // Try to support different API contracts (OTP-based, token-based, Django/Djoser style)
+  const payload: JsonRecord = {
+    email: normalizedEmail,
+    token: resetCredential || undefined,
+    otp: resetCredential || undefined,
+    code: resetCredential || undefined,
+    pin: resetCredential || undefined,
+
+    // old API format
+    password,
+    confirm_password: confirmedPassword,
+    confirmPassword: confirmedPassword,
+    password_confirmation: confirmedPassword,
+
+    // djoser/dj-rest-auth style
+    new_password: password,
+    new_password1: password,
+    new_password2: confirmedPassword,
+    re_new_password: confirmedPassword,
+
+    // uid/token variant
+    uid: undefined,
+    logout_all_devices: logoutAllDevices,
+    logoutAllDevices,
+  };
+
+  // Remove undefined fields to avoid sending extraneous empty values that may cause validation errors.
+  Object.keys(payload).forEach((key) => {
+    if (payload[key] === undefined || payload[key] === '') {
+      delete payload[key];
+    }
+  });
+
   return postAuthWithFallback(
-    ['/auth/reset-password/', '/auth/password-reset/confirm/', '/auth/password-reset/reset/'],
-    {
-      token: resetCredential,
-      otp: resetCredential,
-      code: resetCredential,
-      pin: resetCredential,
-      email: normalizedEmail,
-      password,
-      confirm_password: confirmedPassword,
-      confirmPassword: confirmedPassword,
-      password_confirmation: confirmedPassword,
-      logout_all_devices: logoutAllDevices,
-      logoutAllDevices,
-    },
+    ['/auth/password-reset/reset/', '/auth/password-reset/confirm/', '/auth/reset-password/'],
+    payload,
     'Failed to reset your password.'
   );
 };
